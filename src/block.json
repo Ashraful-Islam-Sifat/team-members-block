@@ -1,0 +1,24 @@
+{
+	"apiVersion": 3,
+	"name": "create-block/team-members",
+	"version": "0.1.0",
+	"title": "Team Members",
+	"category": "media",
+	"icon": "groups",
+	"description": "A team members grid",
+	"keywords": ["Team", "Members", "Grid"],
+	"supports": {
+		"html": false
+	},
+	"textdomain": "team-members",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScript": "file:./view.js",
+	"attributes": {
+		"columns": {
+			"type": "number",
+			"default": 2
+		}
+	}
+}
