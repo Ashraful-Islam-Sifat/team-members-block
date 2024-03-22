@@ -30,6 +30,7 @@ export default function Edit({attributes, setAttributes}) {
 
 			<InnerBlocks 
 			    allowedBlocks={['create-block/team-member']}
+				orientation = "horizontal"
 				template={[
 					['create-block/team-member'],
 					['create-block/team-member'],
