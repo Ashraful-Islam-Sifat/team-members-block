@@ -32,6 +32,18 @@
 .wp-block-create-block-team-members .wp-block-create-block-team-member img {
   margin-bottom: 20px;
 }
+.wp-block-create-block-team-members .wp-block-create-block-team-member img.size-thumbnail {
+  max-width: 150px;
+  max-height: 150px;
+}
+.wp-block-create-block-team-members .wp-block-create-block-team-member img.size-medium {
+  max-width: 300px;
+  max-height: 300px;
+}
+.wp-block-create-block-team-members .wp-block-create-block-team-member img.size-large {
+  max-width: 1024px;
+  max-height: 1024;
+}
 .wp-block-create-block-team-members .wp-block-create-block-team-member h4 {
   color: #222;
   font-size: 22px;
@@ -44,6 +56,18 @@
   font-weight: 300;
   margin-bottom: 5px;
   margin-top: 5px;
+}
+.wp-block-create-block-team-members .wp-block-create-block-team-member .wp-block-create-block-team-member-socialLinks ul {
+  list-style: none;
+  padding: 0;
+  margin: 15px -5px 0;
+}
+.wp-block-create-block-team-members .wp-block-create-block-team-member .wp-block-create-block-team-member-socialLinks ul li {
+  display: inline-block;
+  margin: 5px;
+}
+.wp-block-create-block-team-members .wp-block-create-block-team-member .wp-block-create-block-team-member-socialLinks ul li a {
+  text-decoration: none;
 }
 
 /*# sourceMappingURL=style-index.css.map*/

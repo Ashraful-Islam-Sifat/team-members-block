@@ -39,7 +39,31 @@ registerBlockType( 'create-block/team-member', {
             source: "attribute",
             selector: "img",
             attribute: "src"
-        }
+        },
+        imageSize: {
+            type: 'string', 
+            default: 'thumbnail'
+        },
+        socialLinks: {
+            type: 'array',
+            default: [
+                {link: 'https:/facebook.com', icon: 'facebook'},
+                {link: 'https:/instagram.com', icon: 'instagram'}
+            ],
+            source: 'query',
+            selector: '.wp-block-create-block-team-member-socialLinks ul li',
+            query: {
+                icon: {
+                    source: 'attribute',
+                    attribute: 'data-icon'
+                },
+                link: {
+                    source: 'attribute',
+                    selector: 'a',
+                    attribute: 'href'
+                },
+            },
+        },
     },
     edit: Edit,
     save: Save

@@ -15,6 +15,18 @@
 		overflow: hidden;
 		img{
 			margin-bottom: 20px;
+			&.size-thumbnail {
+				max-width: 150px;
+				max-height: 150px;
+			 }
+			 &.size-medium {
+				max-width: 300px;
+				max-height: 300px;
+			 }
+			 &.size-large {
+				max-width: 1024px;
+				max-height: 1024;
+			 }
 		}
 		h4{
 			color: #222;
@@ -28,6 +40,23 @@
 			font-weight: 300;
 			margin-bottom: 5px;
 			margin-top: 5px;
+		}
+		.wp-block-create-block-team-member-socialLinks{
+
+			ul {
+				list-style: none;
+			    padding: 0;
+			    margin: 15px -5px 0;
+
+				li {
+					display: inline-block;
+				    margin: 5px;
+
+					a {
+						text-decoration: none;
+					}
+				}
+			}
 		}
 	}
 }

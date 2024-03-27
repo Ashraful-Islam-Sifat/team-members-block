@@ -1,14 +1,54 @@
-import {useBlockProps, RichText, MediaPlaceholder, BlockControls, MediaReplaceFlow, InspectorControls} from "@wordpress/block-editor";
+import {useBlockProps, RichText, MediaPlaceholder, BlockControls, store as blockEditorStore, MediaReplaceFlow, InspectorControls} from "@wordpress/block-editor";
 import { __ } from '@wordpress/i18n';
 import { isBlobURL, revokeBlobURL } from "@wordpress/blob";
-import { Spinner, withNotices, ToolbarButton, PanelBody, TextareaControl } from "@wordpress/components";
-import { useEffect, useState } from "@wordpress/element";
+import { Spinner, withNotices, ToolbarButton, PanelBody, Button, TextControl, TextareaControl, SelectControl, Icon, Tooltip } from "@wordpress/components";
+import { useSelect } from "@wordpress/data";
+import { useEffect, useState, useRef } from "@wordpress/element";
+import { usePrevious } from "@wordpress/compose";
 
-function Edit({attributes, setAttributes, noticeOperations, noticeUI}) {
+function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected}) {
 
-    const {name, bio, id, alt, url} = attributes;
-
+    const {name, bio, id, alt, url, imageSize, socialLinks} = attributes;
     const [blobURl, setBlobURL] = useState();
+    const [ selectedLink, setSelectedLink ] = useState()
+
+    const titleRef = useRef();
+    const prevURL = usePrevious(url);
+    const prevSelected = usePrevious(isSelected);
+
+//** There is problem on line 31. The sizes object shouldn't be empty.  */
+    // const imageObject = useSelect(
+    //     (select)=> {
+    //         const { getMedia } = select( 'core' );
+    //         return id ? getMedia(id) : null ;
+
+    //     },
+    //     [id]
+    // );
+
+    // const imageSizes = useSelect( ( select ) => {
+    //     return select( blockEditorStore ).getSettings().imageSizes;
+    // }, [] );
+
+    // const getImageSizeOptions = () => {
+    //     if ( !imageObject ) return [];
+    //     const options = [];
+    //     const sizes = imageObject.media_details.sizes;
+    //     for ( const key in sizes ) {
+    //         const size = sizes[key];
+           
+    //         const imageSize = imageSizes.find( (s) => s.slug === key );
+           
+    //         if ( imageSize ) {
+    //             options.push( {
+    //                 label: imageSize.name,
+    //                 value: size.source_url
+    //             } )
+    //         }
+    //     }
+    //     return options;
+       
+    // }
 
     const onChangeName = (newName) => {
         setAttributes({name: newName})
@@ -38,6 +78,10 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI}) {
         } )
     }
 
+    const onChangeImageSize = (newSize) =>{
+        setAttributes( { imageSize : newSize } );
+    };
+
     const onUploadError = (message) => {
         noticeOperations.removeAllNotices();
         noticeOperations.createErrorNotice(message);
@@ -49,6 +93,13 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI}) {
             alt: '',
             id: undefined
         } )
+    }
+
+    const addNewSocialItem = () => {
+        setAttributes( {
+            socialLinks: [ ...socialLinks, { icon: 'wordpress', link: '' } ]
+        } );
+        setSelectedLink(socialLinks.length);
     }
 
     useEffect(()=> {
@@ -67,7 +118,19 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI}) {
             revokeBlobURL( blobURl );
             setBlobURL();
         }
-    }, [url])
+    }, [url]);
+
+    useEffect(()=> {
+        if( url && !prevURL ){
+            titleRef.current.focus()
+        }
+    }, [url, prevURL]);
+
+    useEffect(()=> {
+        if( prevSelected && !isSelected ){
+            setSelectedLink();
+        }
+    }, [isSelected, prevSelected]);
 
     return (
         <>
@@ -75,6 +138,19 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI}) {
         <InspectorControls>
             { url && !isBlobURL(url) &&
             <PanelBody title={ __( 'Image Settings', 'team-members' ) }>
+            {id && (
+                <SelectControl
+                    label= { __( 'Image Size', 'team-members' ) }
+                    options={[
+                        { label: __('Thumbnail'), value: 'thumbnail' },
+                        { label: __('Medium'), value: 'medium' },
+                        { label: __('Large'), value: 'large' },
+                    ]}
+                    value={ imageSize }
+                    onChange={ onChangeImageSize }
+                />
+            )}
+            
                 <TextareaControl
                     label= { __( 'Alt Text', 'team-members' ) }
                     value={alt}
@@ -104,7 +180,7 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI}) {
         { url && (
             <div className={`wp-block-create-block-team-member-img${
                 isBlobURL(url) ? ' is-loading' : ''
-            }`}>
+            } size-${imageSize}`}>
                  <img src={ url } alt= { alt } />
                  {isBlobURL(url) && <Spinner />}
             </div>
@@ -126,6 +202,7 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI}) {
             onChange= {onChangeName}
             value= {name}
             allowedFormats={[ ]}
+            ref= { titleRef }
         />
          <RichText 
             placeholder={__('Bio', 'team-members')}
@@ -134,6 +211,50 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI}) {
             value={bio}
             allowedFormats={[ ]}
         />
+
+        <div className="wp-block-create-block-team-member-socialLinks">
+            <ul>
+                {socialLinks.map( (item, index)=> {
+                    return (
+                        <li 
+                            key={index}
+                            className={
+                                selectedLink == index ? 'is-selected' : null
+                            }
+                        >
+                            <button  
+                                aria-label={__('Edit Social Link', 'team-members')}
+                                onClick={()=> setSelectedLink(index)}
+                            >
+                                <Icon icon={item.icon} />
+                            </button>
+                        </li>
+                    )
+                } )}
+                {isSelected &&
+                <li className="wp-block-create-block-team-member-add-icon-li">
+                    <Tooltip text={__('Add Social Link', 'team-members')}>
+                        <button
+                        aria-label={__('Add Social Link', 'team-members')}
+                        onClick={addNewSocialItem}
+                        >
+                            <Icon icon="plus" />
+                        </button>
+                    </Tooltip>
+                </li>
+                }  
+            </ul>
+        </div>
+
+        {selectedLink !== undefined && 
+        <div className="wp-block-create-block-team-member-link-form">
+            <TextControl label={ __('Icon', 'team-members') } />
+            <TextControl label={ __('URL', 'team-members') } />
+            <br/>
+            <Button isDestructive >
+            { __('Remove Link', 'team-members') }
+            </Button>
+        </div>}
     </div>
     </>
     )
