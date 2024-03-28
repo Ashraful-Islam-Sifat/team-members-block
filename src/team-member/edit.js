@@ -5,6 +5,10 @@ import { Spinner, withNotices, ToolbarButton, PanelBody, Button, TextControl, Te
 import { useSelect } from "@wordpress/data";
 import { useEffect, useState, useRef } from "@wordpress/element";
 import { usePrevious } from "@wordpress/compose";
+import { DndContext, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
+import { SortableContext, horizontalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import SortableItem from "./sortable-item";
+import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 
 function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected}) {
 
@@ -15,6 +19,9 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected
     const titleRef = useRef();
     const prevURL = usePrevious(url);
     const prevSelected = usePrevious(isSelected);
+    const sensors = useSensors( useSensor( PointerSensor, {
+        activationConstraint: { distance: 5 }
+    } ) );
 
 //** There is problem on line 31. The sizes object shouldn't be empty.  */
     // const imageObject = useSelect(
@@ -52,11 +59,11 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected
 
     const onChangeName = (newName) => {
         setAttributes({name: newName})
-    }
+    };
 
     const onChangeBio = (newBio) => {
         setAttributes({bio:newBio})
-    }
+    };
 
     const onChangeAlt = (newAlt) => {
         setAttributes( { alt: newAlt } )
@@ -68,7 +75,7 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected
             return;
         }
         setAttributes( { id:newImage.id, url:newImage.url, alt:newImage.alt } )
-    }
+    };
 
     const onSelectURL = (newURL) => {
         setAttributes( {
@@ -76,7 +83,7 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected
             id: undefined,
             alt: ''
         } )
-    }
+    };
 
     const onChangeImageSize = (newSize) =>{
         setAttributes( { imageSize : newSize } );
@@ -85,7 +92,7 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected
     const onUploadError = (message) => {
         noticeOperations.removeAllNotices();
         noticeOperations.createErrorNotice(message);
-    }
+    };
 
     const onRemoveImage = () => {
         setAttributes( {
@@ -93,14 +100,47 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected
             alt: '',
             id: undefined
         } )
-    }
+    };
 
     const addNewSocialItem = () => {
         setAttributes( {
             socialLinks: [ ...socialLinks, { icon: 'wordpress', link: '' } ]
         } );
         setSelectedLink(socialLinks.length);
+    };
+
+    const updateSocialItem = ( type, value ) => {
+        const socialLinksCopy = [...socialLinks];
+        socialLinksCopy[ selectedLink ][ type ] = value;
+        setAttributes( {socialLinks: socialLinksCopy} )
+    };
+
+    const removeSocialItem = () => {
+        setAttributes( {
+            socialLinks: [
+                ...socialLinks.slice(0, selectedLink),
+                ...socialLinks.slice(selectedLink + 1),
+            ],
+            
+        } );
+        setSelectedLink();
     }
+
+    const handleDragEnd = (event) => {
+        const {active, over} = event;
+        if( active && over && active.id !== over.id) {
+            const oldIndex = socialLinks.findIndex(
+                (i) => active.id == `${i.icon}-${i.link}`
+            );
+            const newIndex =  socialLinks.findIndex(
+                (i) => over.id == `${i.icon}-${i.link}`
+            );
+            setAttributes({
+                socialLinks: arrayMove(socialLinks, oldIndex, newIndex)
+            })
+            setSelectedLink(newIndex)
+        }
+    };
 
     useEffect(()=> {
         if(!id && isBlobURL(url)) {
@@ -109,7 +149,7 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected
                 alt: ''
             })
         }
-    }, [])
+    }, []);
 
     useEffect(()=>{
         if(isBlobURL(url)){
@@ -121,7 +161,7 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected
     }, [url]);
 
     useEffect(()=> {
-        if( url && !prevURL ){
+        if( url && !prevURL && isSelected ){
             titleRef.current.focus()
         }
     }, [url, prevURL]);
@@ -214,23 +254,32 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected
 
         <div className="wp-block-create-block-team-member-socialLinks">
             <ul>
-                {socialLinks.map( (item, index)=> {
-                    return (
-                        <li 
-                            key={index}
-                            className={
-                                selectedLink == index ? 'is-selected' : null
-                            }
-                        >
-                            <button  
-                                aria-label={__('Edit Social Link', 'team-members')}
-                                onClick={()=> setSelectedLink(index)}
-                            >
-                                <Icon icon={item.icon} />
-                            </button>
-                        </li>
-                    )
-                } )}
+                <DndContext 
+                    sensors={sensors} 
+                    onDragEnd={handleDragEnd}
+                    modifiers={ [ restrictToHorizontalAxis ] }
+                >
+                    <SortableContext
+                        items={socialLinks.map(
+                            (item) => `${item.icon}-${item.link}`
+                        )}
+                        strategy={ horizontalListSortingStrategy }
+                    >
+                        {socialLinks.map( (item, index) => {
+                            return (
+                                <SortableItem
+                                key={`${item.icon}-${item.link}`}
+                                id={`${item.icon}-${item.link}`}
+                                index= {index}
+                                selectedLink= {selectedLink}
+                                setSelectedLink= {setSelectedLink}
+                                icon= {item.icon}
+                                />
+                            )
+                        })}
+                    </SortableContext>
+                </DndContext>
+
                 {isSelected &&
                 <li className="wp-block-create-block-team-member-add-icon-li">
                     <Tooltip text={__('Add Social Link', 'team-members')}>
@@ -248,10 +297,18 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected
 
         {selectedLink !== undefined && 
         <div className="wp-block-create-block-team-member-link-form">
-            <TextControl label={ __('Icon', 'team-members') } />
-            <TextControl label={ __('URL', 'team-members') } />
+            <TextControl 
+                label={ __('Icon', 'team-members') } 
+                value={socialLinks[selectedLink].icon}
+                onChange={ (icon) => updateSocialItem('icon', icon) }
+            />
+            <TextControl 
+                label={ __('URL', 'team-members') } 
+                value={socialLinks[selectedLink].link}
+                onChange={ (link) => updateSocialItem('link', link) }
+            />
             <br/>
-            <Button isDestructive >
+            <Button isDestructive onClick={ removeSocialItem } >
             { __('Remove Link', 'team-members') }
             </Button>
         </div>}
