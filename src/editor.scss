@@ -37,20 +37,6 @@
 			.wp-block-create-block-team-member-img{
 				position: relative;
 				margin-bottom: 20px;
-				overflow: hidden;
-				 &.size-thumbnail img {
-					max-width: 150px;
-					max-height: 150px;
-				 }
-				 &.size-medium img {
-					max-width: 300px;
-					max-height: 300px;
-				 }
-				 &.size-large img {
-					max-width: 1024px;
-					max-height: 1024;
-				 }
-
 				&.is-loading img {
 					opacity: 0.3;
 				}

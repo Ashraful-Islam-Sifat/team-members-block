@@ -5429,7 +5429,52 @@ __webpack_require__.r(__webpack_exports__);
   /**
    * @see ./save.js
    */
-  save: _save__WEBPACK_IMPORTED_MODULE_3__["default"]
+  save: _save__WEBPACK_IMPORTED_MODULE_3__["default"],
+  transforms: {
+    from: [{
+      type: 'block',
+      blocks: ['core/gallery'],
+      transform: ({
+        images,
+        columns
+      }) => {
+        const innerBlocks = images.map(({
+          url,
+          id,
+          alt
+        }) => {
+          return (0,_wordpress_blocks__WEBPACK_IMPORTED_MODULE_0__.createBlock)('create-block/team-member', {
+            alt,
+            id,
+            url
+          });
+        });
+        return (0,_wordpress_blocks__WEBPACK_IMPORTED_MODULE_0__.createBlock)("create-block/team-members", {
+          columns: columns || 2
+        }, innerBlocks);
+      }
+    }, {
+      type: 'block',
+      blocks: ['core/image'],
+      isMultiBlock: true,
+      transform: attributes => {
+        const innerBlocks = attributes.map(({
+          url,
+          id,
+          alt
+        }) => {
+          return (0,_wordpress_blocks__WEBPACK_IMPORTED_MODULE_0__.createBlock)('create-block/team-member', {
+            alt,
+            id,
+            url
+          });
+        });
+        return (0,_wordpress_blocks__WEBPACK_IMPORTED_MODULE_0__.createBlock)("create-block/team-members", {
+          columns: attributes.length > 3 ? 3 : attributes.length
+        }, innerBlocks);
+      }
+    }]
+  }
 });
 
 /***/ }),
@@ -5509,6 +5554,7 @@ __webpack_require__.r(__webpack_exports__);
 
 function Edit({
   attributes,
+  context,
   setAttributes,
   noticeOperations,
   noticeUI,
@@ -5520,7 +5566,6 @@ function Edit({
     id,
     alt,
     url,
-    imageSize,
     socialLinks
   } = attributes;
   const [blobURl, setBlobURL] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_6__.useState)();
@@ -5533,41 +5578,36 @@ function Edit({
       distance: 5
     }
   }));
-
-  //** There is problem on line 31. The sizes object shouldn't be empty.  */
-  // const imageObject = useSelect(
-  //     (select)=> {
-  //         const { getMedia } = select( 'core' );
-  //         return id ? getMedia(id) : null ;
-
-  //     },
-  //     [id]
-  // );
-
-  // const imageSizes = useSelect( ( select ) => {
-  //     return select( blockEditorStore ).getSettings().imageSizes;
-  // }, [] );
-
-  // const getImageSizeOptions = () => {
-  //     if ( !imageObject ) return [];
-  //     const options = [];
-  //     const sizes = imageObject.media_details.sizes;
-  //     for ( const key in sizes ) {
-  //         const size = sizes[key];
-
-  //         const imageSize = imageSizes.find( (s) => s.slug === key );
-
-  //         if ( imageSize ) {
-  //             options.push( {
-  //                 label: imageSize.name,
-  //                 value: size.source_url
-  //             } )
-  //         }
-  //     }
-  //     return options;
-
-  // }
-
+  const imageObject = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_5__.useSelect)(select => {
+    const {
+      getMedia
+    } = select('core');
+    return id ? getMedia(id) : null;
+  }, [id]);
+  const imageSizes = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_5__.useSelect)(select => {
+    return select(_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_1__.store).getSettings().imageSizes;
+  }, []);
+  const onChangeImageSize = newURL => {
+    setAttributes({
+      url: newURL
+    });
+  };
+  const getImageSizeOptions = () => {
+    if (!imageObject) return [];
+    const options = [];
+    const sizes = imageObject.media_details.sizes;
+    for (const key in sizes) {
+      const size = sizes[key];
+      const imageSize = imageSizes.find(s => s.slug === key);
+      if (imageSize) {
+        options.push({
+          label: imageSize.name,
+          value: size.source_url
+        });
+      }
+    }
+    return options;
+  };
   const onChangeName = newName => {
     setAttributes({
       name: newName
@@ -5603,11 +5643,6 @@ function Edit({
       url: newURL,
       id: undefined,
       alt: ''
-    });
-  };
-  const onChangeImageSize = newSize => {
-    setAttributes({
-      imageSize: newSize
     });
   };
   const onUploadError = message => {
@@ -5687,17 +5722,8 @@ function Edit({
     title: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Image Settings', 'team-members')
   }, id && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_4__.SelectControl, {
     label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Image Size', 'team-members'),
-    options: [{
-      label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Thumbnail'),
-      value: 'thumbnail'
-    }, {
-      label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Medium'),
-      value: 'medium'
-    }, {
-      label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Large'),
-      value: 'large'
-    }],
-    value: imageSize,
+    options: getImageSizeOptions(),
+    value: url,
     onChange: onChangeImageSize
   }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_4__.TextareaControl, {
     label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Alt Text', 'team-members'),
@@ -5705,7 +5731,7 @@ function Edit({
     onChange: onChangeAlt,
     help: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)("Alternative text describes your image to people can't see it. Add a short description with it's key details.", 'team-members')
   }))), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_1__.BlockControls, {
-    goup: "inline"
+    group: "inline"
   }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_1__.MediaReplaceFlow, {
     onSelect: onSelectImage,
     onSelectURL: onSelectURL,
@@ -5719,7 +5745,7 @@ function Edit({
   }, (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Remove Image', 'team-members'))), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     ...(0,_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_1__.useBlockProps)()
   }, url && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
-    className: `wp-block-create-block-team-member-img${(0,_wordpress_blob__WEBPACK_IMPORTED_MODULE_3__.isBlobURL)(url) ? ' is-loading' : ''} size-${imageSize}`
+    className: `wp-block-create-block-team-member-img${(0,_wordpress_blob__WEBPACK_IMPORTED_MODULE_3__.isBlobURL)(url) ? ' is-loading' : ''}`
   }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("img", {
     src: url,
     alt: alt
@@ -5818,6 +5844,7 @@ __webpack_require__.r(__webpack_exports__);
     reusable: false,
     html: false
   },
+  usesContext: ['create-block/team-members-columns'],
   attributes: {
     name: {
       type: "string",
@@ -5844,10 +5871,6 @@ __webpack_require__.r(__webpack_exports__);
       source: "attribute",
       selector: "img",
       attribute: "src"
-    },
-    imageSize: {
-      type: 'string',
-      default: 'thumbnail'
     },
     socialLinks: {
       type: 'array',
@@ -6115,7 +6138,7 @@ module.exports = window["wp"]["i18n"];
   \************************/
 /***/ ((module) => {
 
-module.exports = /*#__PURE__*/JSON.parse('{"apiVersion":3,"name":"create-block/team-members","version":"0.1.0","title":"Team Members","category":"media","icon":"groups","description":"A team members grid","keywords":["Team","Members","Grid"],"supports":{"html":false,"align":["wide","full"]},"textdomain":"team-members","editorScript":"file:./index.js","editorStyle":"file:./index.css","style":"file:./style-index.css","viewScript":"file:./view.js","attributes":{"columns":{"type":"number","default":2}},"example":{"attributes":{"columns":2},"innerBlocks":[{"name":"create-block/team-member","attributes":{"name":"John Doe","bio":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam neque nibh, tincidunt ut facilisis vitae, ullamcorper sit amet lectus. Proin porta vulputate purus.","url":"https://picsum.photos/id/1012/300/200","socialLinks":[{"icon":"facebook"},{"icon":"twitter"},{"icon":"instagram"}]}},{"name":"create-block/team-member","attributes":{"name":"Jane Doe","bio":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam neque nibh, tincidunt ut facilisis vitae, ullamcorper sit amet lectus. Proin porta vulputate purus.","url":"https://picsum.photos/id/1011/300/200","socialLinks":[{"icon":"facebook"},{"icon":"twitter"},{"icon":"instagram"}]}}]}}');
+module.exports = /*#__PURE__*/JSON.parse('{"apiVersion":3,"name":"create-block/team-members","version":"0.1.0","title":"Team Members","category":"media","icon":"groups","description":"A team members grid","keywords":["Team","Members","Grid"],"supports":{"html":true,"align":["wide","full"]},"textdomain":"team-members","editorScript":"file:./index.js","editorStyle":"file:./index.css","style":"file:./style-index.css","viewScript":"file:./view.js","providesContext":{"create-block/team-members-columns":"columns"},"attributes":{"columns":{"type":"number","default":2}},"example":{"attributes":{"columns":2},"innerBlocks":[{"name":"create-block/team-member","attributes":{"name":"John Doe","bio":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam neque nibh, tincidunt ut facilisis vitae, ullamcorper sit amet lectus. Proin porta vulputate purus.","url":"https://picsum.photos/id/1012/300/200","socialLinks":[{"icon":"facebook"},{"icon":"twitter"},{"icon":"instagram"}]}},{"name":"create-block/team-member","attributes":{"name":"Jane Doe","bio":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam neque nibh, tincidunt ut facilisis vitae, ullamcorper sit amet lectus. Proin porta vulputate purus.","url":"https://picsum.photos/id/1011/300/200","socialLinks":[{"icon":"facebook"},{"icon":"twitter"},{"icon":"instagram"}]}}]}}');
 
 /***/ })
 

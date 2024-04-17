@@ -10,9 +10,9 @@ import { SortableContext, horizontalListSortingStrategy, arrayMove } from "@dnd-
 import SortableItem from "./sortable-item";
 import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 
-function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected}) {
+function Edit({attributes, context, setAttributes, noticeOperations, noticeUI, isSelected}) {
 
-    const {name, bio, id, alt, url, imageSize, socialLinks} = attributes;
+    const {name, bio, id, alt, url, socialLinks} = attributes;
     const [blobURl, setBlobURL] = useState();
     const [ selectedLink, setSelectedLink ] = useState()
 
@@ -23,39 +23,42 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected
         activationConstraint: { distance: 5 }
     } ) );
 
-//** There is problem on line 31. The sizes object shouldn't be empty.  */
-    // const imageObject = useSelect(
-    //     (select)=> {
-    //         const { getMedia } = select( 'core' );
-    //         return id ? getMedia(id) : null ;
+    const imageObject = useSelect(
+        (select)=> {
+            const { getMedia } = select( 'core' );
+            return id ? getMedia(id) : null ;
 
-    //     },
-    //     [id]
-    // );
+        },
+        [id]
+    );
 
-    // const imageSizes = useSelect( ( select ) => {
-    //     return select( blockEditorStore ).getSettings().imageSizes;
-    // }, [] );
+    const imageSizes = useSelect( ( select ) => {
+        return select( blockEditorStore ).getSettings().imageSizes;
+    }, [] );
 
-    // const getImageSizeOptions = () => {
-    //     if ( !imageObject ) return [];
-    //     const options = [];
-    //     const sizes = imageObject.media_details.sizes;
-    //     for ( const key in sizes ) {
-    //         const size = sizes[key];
+    const onChangeImageSize = ( newURL ) => {
+		setAttributes( { url: newURL } );
+	};
+
+    const getImageSizeOptions = () => {
+        if ( !imageObject ) return [];
+        const options = [];
+        const sizes = imageObject.media_details.sizes;
+        for ( const key in sizes ) {
+            const size = sizes[key];
            
-    //         const imageSize = imageSizes.find( (s) => s.slug === key );
+            const imageSize = imageSizes.find( (s) => s.slug === key );
            
-    //         if ( imageSize ) {
-    //             options.push( {
-    //                 label: imageSize.name,
-    //                 value: size.source_url
-    //             } )
-    //         }
-    //     }
-    //     return options;
+            if ( imageSize ) {
+                options.push( {
+                    label: imageSize.name,
+                    value: size.source_url
+                } )
+            }
+        }
+        return options;
        
-    // }
+    }
 
     const onChangeName = (newName) => {
         setAttributes({name: newName})
@@ -83,10 +86,6 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected
             id: undefined,
             alt: ''
         } )
-    };
-
-    const onChangeImageSize = (newSize) =>{
-        setAttributes( { imageSize : newSize } );
     };
 
     const onUploadError = (message) => {
@@ -181,12 +180,8 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected
             {id && (
                 <SelectControl
                     label= { __( 'Image Size', 'team-members' ) }
-                    options={[
-                        { label: __('Thumbnail'), value: 'thumbnail' },
-                        { label: __('Medium'), value: 'medium' },
-                        { label: __('Large'), value: 'large' },
-                    ]}
-                    value={ imageSize }
+                    options={ getImageSizeOptions() }
+                    value={ url }
                     onChange={ onChangeImageSize }
                 />
             )}
@@ -202,7 +197,7 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected
             </PanelBody> }
         </InspectorControls>
         
-        <BlockControls goup="inline">
+        <BlockControls group="inline">
             <MediaReplaceFlow
                 onSelect={ onSelectImage }
                 onSelectURL={ onSelectURL }
@@ -220,7 +215,7 @@ function Edit({attributes, setAttributes, noticeOperations, noticeUI, isSelected
         { url && (
             <div className={`wp-block-create-block-team-member-img${
                 isBlobURL(url) ? ' is-loading' : ''
-            } size-${imageSize}`}>
+            }`}>
                  <img src={ url } alt= { alt } />
                  {isBlobURL(url) && <Spinner />}
             </div>

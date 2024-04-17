@@ -13,6 +13,7 @@ registerBlockType( 'create-block/team-member', {
         reusable: false,
         html: false
     },
+    usesContext: [ 'create-block/team-members-columns' ],
     attributes: {
         name: {
             type: "string",
@@ -39,10 +40,6 @@ registerBlockType( 'create-block/team-member', {
             source: "attribute",
             selector: "img",
             attribute: "src"
-        },
-        imageSize: {
-            type: 'string', 
-            default: 'thumbnail'
         },
         socialLinks: {
             type: 'array',
